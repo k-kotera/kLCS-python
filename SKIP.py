@@ -1,5 +1,7 @@
 import numpy as np
+from numba import njit
 
+@njit
 def compute_cumulative_query(q, m):
     """
     Compute the cumulative sum and cumulative sum of squares for query q.
@@ -18,6 +20,7 @@ def compute_cumulative_query(q, m):
     S_1_q2 = np.cumsum(q**2)
     return S_1_q, S_1_q2
 
+@njit
 def compute_alpha_cumulative_arrays(O, q, m, α):
     """
     Compute the α-skipping cumulative arrays for each object in O.
@@ -56,6 +59,7 @@ def compute_alpha_cumulative_arrays(O, q, m, α):
                     S_α_qo[o_idx, i] = S_α_qo[o_idx, i - α] + sum(q[i - α + 1 : i + 1] * o[i - α + 1 : i + 1])
     return S_α_o, S_α_o2, S_α_qo
 
+@njit
 def compute_initial_sums(o, q, l, S_alpha_o_row, S_alpha_o2_row, S_alpha_qo_row, α):
     """
     Compute the initial running sums for object o when τ = 0.
@@ -85,6 +89,7 @@ def compute_initial_sums(o, q, l, S_alpha_o_row, S_alpha_o2_row, S_alpha_qo_row,
         sum_qo += q[i] * o[i]
     return sum_o, sum_o2, sum_qo
 
+@njit
 def update_incrementally_sums(o, q, τ, l, curr_sum_o, curr_sum_o2, curr_sum_qo):
     """
     Update the running sums for object o when τ > 0.
@@ -107,6 +112,7 @@ def update_incrementally_sums(o, q, τ, l, curr_sum_o, curr_sum_o2, curr_sum_qo)
     curr_sum_qo = curr_sum_qo - q[τ - 1] * o[τ - 1] + q[τ + l - 1] * o[τ + l - 1]
     return curr_sum_o, curr_sum_o2, curr_sum_qo
 
+@njit
 def update_incrementally_query_sums(q, curr_sum_q, curr_sum_q2, τ, l):
     """
     Update the running cumulative sums for the query q when τ > 0.
@@ -126,6 +132,7 @@ def update_incrementally_query_sums(q, curr_sum_q, curr_sum_q2, τ, l):
     curr_sum_q2 = curr_sum_q2 - q[τ - 1]**2 + q[τ + l - 1]**2
     return curr_sum_q, curr_sum_q2
 
+@njit
 def compute_pearson_correlation_from_sums(sum_q, sum_q2, sum_o, sum_o2, sum_qo, l):
     """
     Compute the Pearson correlation coefficient (ρ) from the given running sums.
@@ -155,6 +162,7 @@ def compute_pearson_correlation_from_sums(sum_q, sum_q2, sum_o, sum_o2, sum_qo, 
     ρ = (sum_qo - l * μ_q * μ_o) / (l * σ_q * σ_o)
     return ρ
 
+@njit
 def is_overlapping(new_candidate, existing_candidates):
     """
     Check if the new candidate subsequence overlaps with any existing candidate
@@ -179,6 +187,7 @@ def is_overlapping(new_candidate, existing_candidates):
                 return True
     return False
 
+@njit
 def skip_algorithm(q, O, m, α, δ, k):
     """
     SKIP Algorithm for finding the most correlated subsequences.
@@ -191,13 +200,7 @@ def skip_algorithm(q, O, m, α, δ, k):
     computed/updated. The Pearson correlation is then computed in O(1) time using
     precomputed cumulative sums. The use of α-skipping cumulative arrays reduces
     the per-correlation computation from O(l) to O(α).
-    
-    Corresponding pseudocode lines:
-      - Line 1: Compute cumulative sums for q.
-      - Line 2: Compute α-skipping cumulative arrays for each object.
-      - Lines 5-7: Compute/update running sums for each subsequence.
-      - Line 12: Compute the Pearson correlation.
-    
+
     Parameters:
       q: numpy array representing the query time series (length m)
       O: list/2D-array of time series (each of length m)
